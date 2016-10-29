@@ -1,58 +1,61 @@
 import Floor
 import random
 
-class Building():
+
+class Building:
 
     def __init__(self, elevator, floors_count=10, persons_count=1000):
         self.elevator = elevator
-        self.persons_count = persons_count
         self.floors_count = floors_count
-        map = self.get_rand_persons_map(floors_count, persons_count)
-        self.floors = [Floor.Floor(key, value, floors_count) for key, value in map.items()]
+        self.persons_count = persons_count
+        self.map_of_floor_and_persons = self.get_rand_persons_map(floors_count, persons_count)
+        self.floors = [Floor.Floor(key, value, floors_count) for key, value in self.map_of_floor_and_persons.items()]
+        print("Building created")
 
     def get_rand_persons_map(self, floors_count, persons_count):
-        map = {}
+        map_of_persons = {}
         for i in range(floors_count):
-            if (persons_count > 2):
-                map[i + 1] = random.randrange(1, persons_count, 1)
-                persons_count = persons_count - map[i + 1]
-                continue
+            if persons_count > 2:
+                map_of_persons[i + 1] = random.randrange(1, persons_count, 1)
+                persons_count = persons_count - map_of_persons[i + 1]
             else:
-                map[i + 1] = persons_count
+                map_of_persons[i + 1] = persons_count
                 persons_count = 0
-            if (i == floors_count):
-                map[i + 1] = persons_count
-                continue
-        return map
+
+            if i == floors_count:
+                map_of_persons[i + 1] = persons_count
+
+        return map_of_persons
 
     def run_elevator(self):
-        isMovingUp = True
-        while(self.get_elevator_waiters_count() > 0):
+        is_moving_up = True
+        counter = 0
+        while self.get_elevator_waiters_count() > 0:
 
-            if (isMovingUp):
-                for i in range(self.floors_count):
+            if is_moving_up:
+                for i in range(1, self.floors_count + 1):
                     self.elevator.remove_persons()
-                    self.elevator.take_persons(self.floors[i].get_persons(15, isMovingUp)) #TODO
-                    if(i != self.floors_count-1):
-                        self.elevator.move_to_floor(i+2)
+                    self.elevator.take_persons(self.floors[i-1].get_persons(self.elevator.get_available_count_to_take(), is_moving_up))
+                    if i < self.floors_count:
+                        self.elevator.move_to_floor(i+1)
             else:
-                for i in reversed(range(self.floors_count)):
+                for i in range(self.floors_count, 1, -1):
                     self.elevator.remove_persons()
-                    self.elevator.take_persons(self.floors[i].get_persons(15, isMovingUp)) #TODO
-                    if(i != self.floors_count-1):
-                        self.elevator.move_to_floor(i-2)
+                    self.elevator.take_persons(self.floors[i-1].get_persons(self.elevator.get_available_count_to_take(), is_moving_up))
+                    if i != 1:
+                        self.elevator.move_to_floor(i-1)
 
-        isMovingUp = False if isMovingUp else True
+            is_moving_up = False if is_moving_up else True
+            counter += 1
 
-
-
+        print("Iteration (1 iteration = way from 1 to last floor, or from last to one) count is: #####{}#####".format(counter))
 
     def get_elevator_waiters_count(self):
-        sum = 0
+        cur_waiters_count = 0
         for floor in self.floors:
-            sum = sum + len(floor.persons)
-        print("desired elevator waiters count is: " + str(sum))
-        return sum
+            cur_waiters_count = cur_waiters_count + len(floor.persons)
+        print("All desired elevator waiters count is: {}".format(str(cur_waiters_count)))
+        return cur_waiters_count
 
     def __str__(self):
         print("Building created, floors: {}, persons: {}".format(self.floors_count, self.persons_count))
